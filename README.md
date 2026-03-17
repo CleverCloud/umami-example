@@ -1,136 +1,192 @@
-# umami
+# Umami Analytics on Clever Cloud
 
-Umami is a simple, fast, privacy-focused alternative to Google Analytics. This version is a fork by Clever Cloud.
+[![Clever Cloud - PaaS](https://img.shields.io/badge/Clever%20Cloud-PaaS-orange)](https://clever-cloud.com)
 
-## Getting started
+This example shows how to deploy [Umami](https://umami.is/), an open-source, privacy-focused web analytics platform, on Clever Cloud from source using a Node.js runtime and a PostgreSQL add-on.
 
-A detailed getting started guide can be found at [https://umami.is/docs/](https://umami.is/docs/)
+## About the Application
 
-## Installing from source
+Umami is a simple, fast, privacy-focused alternative to Google Analytics. It uses:
 
-### Requirements
+- **Next.js** for the web application
+- **Prisma** as the ORM with automatic migrations
+- **PostgreSQL** as the database
 
-- A server with Node.js version 16.13 or newer
-- A database. Umami supports [MySQL](https://www.mysql.com/) and [Postgresql](https://www.postgresql.org/) databases. To deploy on Clever Cloud, we will be using a PostgreSQL add-on.
+### Features
 
-### Install Yarn
+- Privacy-focused analytics (no cookies, GDPR compliant)
+- Real-time dashboard
+- Visitor insights (pages, referrers, browsers, OS, devices, countries)
+- Custom events tracking
+- Multiple website support
+- Lightweight tracking script (~2KB)
+
+## Technology Stack
+
+- [Node.js 18.18+](https://nodejs.org/) - JavaScript runtime
+- [PostgreSQL 12.14+](https://www.postgresql.org/) - Database
+- [pnpm](https://pnpm.io/) - Package manager
+
+## Prerequisites
+
+- A [Clever Cloud](https://clever-cloud.com) account
+- [Clever Tools CLI](https://github.com/CleverCloud/clever-tools) installed
+- [Git](https://git-scm.com/)
+
+## Deploying on Clever Cloud
+
+You have two options to deploy your application on Clever Cloud: using the Web Console or using the Clever Tools CLI.
+
+### Option 1: Deploy using the Web Console
+
+#### 1. Create an account on Clever Cloud
+
+If you don't already have an account, go to the [Clever Cloud console](https://console.clever-cloud.com/) and follow the registration instructions.
+
+#### 2. Create a PostgreSQL add-on
+
+1. Log in to the [Clever Cloud console](https://console.clever-cloud.com/)
+2. Click on "Create" and select "An add-on"
+3. Choose "PostgreSQL"
+4. Select a plan that fits your needs (Dev plan works for testing)
+5. Name your add-on (e.g., `umami-db`)
+
+#### 3. Set up your application on Clever Cloud
+
+1. Click on "Create" and select "An application"
+2. Select "Create from a GitHub repository" and use `https://github.com/umami-software/umami.git`
+   - Alternatively, fork the repository first, then select your fork
+3. Choose "Node.js" as the runtime environment
+4. Configure your application settings (name, region, instance size)
+5. Link the PostgreSQL add-on created in the previous step
+
+#### 4. Configure environment variables
+
+In your application's dashboard, go to "Environment variables" and set:
 
 ```
-npm install -g yarn
+DATABASE_URL=$POSTGRESQL_ADDON_URI
+APP_SECRET=<a-random-secret-string>
+PORT=8080
+NODE_ENV=production
+CC_NODE_DEV_DEPENDENCIES=install
+CC_POST_BUILD_HOOK=pnpm build
 ```
 
-### Get the source code and install packages
+> **Note**: `$POSTGRESQL_ADDON_URI` is automatically set when you link the PostgreSQL add-on. You can reference it directly.
 
-```
-git clone https://github.com/umami-software/umami.git
-cd umami
-yarn install
-```
+#### 5. Configure the build instance
 
-### Configure umami
+In your application's dashboard, go to "Scalability" and set the build instance size to **M** (Next.js builds need more memory).
 
-Create an `.env` file with the following environment variable:
+#### 6. Deploy your application
 
-```
-POSTGRESQL_ADDON_URI=connection-url
-```
-
-The connection url is in the following format:
-
-```
-postgresql://username:mypassword@localhost:5432/mydb
-
-mysql://username:mypassword@localhost:3306/mydb
-```
-
-💡 For a smoother workflow, you can already create a PostgreSQL add-on on Clever Cloud and use the `POSTGRESQL_ADDON_URI` value provided from your add-on dashboard (see **Information**).
-
-### Build the application
+Deploy the application from the console or using Git:
 
 ```bash
-yarn build
+# Add Clever Cloud as a remote repository
+git remote add clever git+ssh://git@push-par-clevercloud-customers.services.clever-cloud.com/app_<your-app-id>.git
+
+# Push your code to deploy
+git push clever master
 ```
 
-The build step will also create tables in your database if you ae installing for the first time. It will also create a login user with username **admin** and password **umami**.
+### Option 2: Deploy using Clever Tools CLI
 
-### Start the application
+#### 1. Install Clever Tools
+
+Install the Clever Tools CLI following the [official documentation](https://www.clever-cloud.com/doc/clever-tools/getting_started/):
 
 ```bash
-yarn start
+# Using npm
+npm install -g clever-tools
+
+# Or using Homebrew (macOS)
+brew install clever-tools
 ```
 
-By default this will launch the application on `http://localhost:8080`. You will need to either
-[proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) requests from your web server
-or change the [port](https://nextjs.org/docs/api-reference/cli#production) to serve the application directly.
-
-## Deploy Umami on
-
-![Clever Cloud](https://cellar-c2.services.clever-cloud.com/precious-jpegs/clever-cloud-logo.png)
-
-Clone this repository and follow this easy procedure.
-
-### 1. Set up the remote database
-
-💡 _Skip this step if you've already done it_
-
-Create a PostgreSQL add-on on Clever Cloud and add `POSTGRESQL_ADDON_URI` value in your local `.env` file.
-
-### 2. Build the app locally
-
-This step should only be necessary on first deployment.
+#### 2. Log in to your Clever Cloud account
 
 ```bash
-yarn install
-yarn build
+clever login
 ```
 
-### 3. Commit your build repositories
-
-Comment in your `.gitignore` the following files : 
-
-```
-#/.next/
-#/out/
-#/prisma/
-
-#/public/script.js
-```
-
-Give them permissions with: (not sure if this is necessary?)
-
-Then add them and commit them:
+#### 3. Clone Umami
 
 ```bash
-git add .
-git commit -m "first deployment"
+git clone https://github.com/umami-software/umami.git .
 ```
 
-### 4. Declare a Node.JS app
-
-Create a new app on Clever Cloud, choose to deploy with Git and select a Node.JS runtime.
-
-Then add the following environment variables:
-
-```
-CC_CUSTOM_BUILD_TOOL="yarn"
-CC_WEBROOT="/.next"
-NODE_ENV="production"
-```
-
-Add the new `clever` remote but don't deploy yet! Go to **Service dependencies** and connect your PostgreSQL addon first.
-
-After that, go to **Information** and add the new git remote. 🚀 Now you can deploy your app with `git push clever main:master`!
-
-## Getting updates
-
-To get the latest features, simply do a pull, install any new dependencies, and rebuild:
+#### 4. Create the application and database
 
 ```bash
-git pull
-yarn install
-yarn build
+# Create a Node.js application
+clever create --type node umami
+
+# Create a PostgreSQL add-on and link it
+clever addon create postgresql-addon umami-db --link umami
+
+# Set required environment variables
+clever env set DATABASE_URL "\$POSTGRESQL_ADDON_URI"
+clever env set APP_SECRET $(openssl rand -hex 32)
+clever env set PORT 8080
+clever env set NODE_ENV "production"
+clever env set CC_NODE_DEV_DEPENDENCIES "install"
+clever env set CC_POST_BUILD_HOOK "pnpm build"
+
+# Use a M instance for building (Next.js build needs more memory)
+clever scale --build-flavor M
 ```
 
-## License
+#### 5. Deploy your application
 
-MIT
+```bash
+clever deploy
+```
+
+#### 6. Open your application in a browser
+
+Once deployed, access your Umami instance:
+
+```bash
+clever open
+```
+
+Log in with the default credentials:
+
+- **Username**: `admin`
+- **Password**: `umami`
+
+> **Important**: Change the default password immediately after your first login.
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `DATABASE_URL` | Yes | - | PostgreSQL connection string |
+| `APP_SECRET` | Yes | - | Unique random string for the installation |
+| `PORT` | Yes | `3000` | Server port (must be `8080` on Clever Cloud) |
+| `DISABLE_LOGIN` | No | `0` | Disable the login page |
+| `DISABLE_TELEMETRY` | No | `0` | Opt out of Umami telemetry |
+| `PRIVATE_MODE` | No | `0` | Disable all external network calls |
+| `CLIENT_IP_HEADER` | No | - | HTTP header for real client IP (e.g. `X-Forwarded-For`) |
+| `TRACKER_SCRIPT_NAME` | No | `script.js` | Custom name for the tracking script |
+| `COLLECT_API_ENDPOINT` | No | `/api/send` | Custom collection endpoint |
+| `BASE_PATH` | No | `/` | Subdirectory path (build-time only) |
+
+For the full list, see the [Umami environment variables documentation](https://umami.is/docs/environment-variables).
+
+## Monitoring Your Application
+
+Once deployed, you can monitor your application through:
+
+- **Web Console**: The Clever Cloud console provides logs, metrics, and other tools to help you manage your application.
+- **CLI**: Use `clever logs` to view application logs and `clever status` to check the status of your application.
+
+## Additional Resources
+
+- [Umami Documentation](https://umami.is/docs)
+- [Umami GitHub Repository](https://github.com/umami-software/umami)
+- [Clever Cloud Node.js Documentation](https://www.clever-cloud.com/developers/doc/applications/nodejs/)
+- [Clever Cloud PostgreSQL Documentation](https://www.clever-cloud.com/developers/doc/addons/postgresql/)
+- [Clever Cloud Documentation](https://www.clever-cloud.com/doc/)
